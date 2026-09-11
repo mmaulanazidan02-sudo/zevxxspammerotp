@@ -138,12 +138,12 @@ pkg install git -y
 
 **4. Clone repository**
 ```bash
-git clone https://github.com/zevxxddos-collab/ZevxxSpammerotp
+git clone https://github.com/mmaulanazidan02-sudo/zevxxspammerotp.git
 ```
 
 **5. Masuk ke folder**
 ```bash
-cd ZevxxSpammerotp
+cd zevxxspamotp.py
 ```
 
 **6. Install dependencies**
